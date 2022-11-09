@@ -162,7 +162,7 @@ nyc_airbnb %>%
 
     ## Warning: Removed 9993 rows containing non-finite values (stat_ydensity).
 
-<img src="writing_functions_files/figure-gfm/unnamed-chunk-7-1.png" width="90%" />
+<img src="linear_model_files/figure-gfm/unnamed-chunk-7-1.png" width="90%" />
 
 ``` r
 nyc_airbnb %>% 
@@ -174,7 +174,7 @@ nyc_airbnb %>%
 
     ## Warning: Removed 9962 rows containing missing values (geom_point).
 
-<img src="writing_functions_files/figure-gfm/unnamed-chunk-7-2.png" width="90%" />
+<img src="linear_model_files/figure-gfm/unnamed-chunk-7-2.png" width="90%" />
 
 ``` r
 nyc_airbnb %>% 
@@ -186,7 +186,7 @@ nyc_airbnb %>%
 
     ## Warning: Removed 9962 rows containing missing values (geom_point).
 
-<img src="writing_functions_files/figure-gfm/unnamed-chunk-7-3.png" width="90%" />
+<img src="linear_model_files/figure-gfm/unnamed-chunk-7-3.png" width="90%" />
 
 ## Hypothesis tests
 
@@ -298,4 +298,4 @@ nyc_airbnb %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
-<img src="writing_functions_files/figure-gfm/unnamed-chunk-12-1.png" width="90%" />
+<img src="linear_model_files/figure-gfm/unnamed-chunk-12-1.png" width="90%" />

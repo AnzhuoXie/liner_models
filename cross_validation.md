@@ -187,3 +187,95 @@ cv_df %>%
     ## 1 linear    0.718
     ## 2 smooth    0.289
     ## 3 wiggly    0.354
+
+## Try on a real dataset.
+
+Import the data.
+
+``` r
+child_growth_df = 
+  read_csv("./data/nepalese_children.csv") %>% 
+  mutate(
+    weight_cp = (weight > 7) * (weight - 7)
+  )
+```
+
+    ## Rows: 2705 Columns: 5
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## dbl (5): age, sex, weight, height, armc
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+weight vs arm circumference
+
+``` r
+child_growth_df %>% 
+  ggplot(aes(x = weight, y = armc)) +
+  geom_point(alpha = .3)
+```
+
+<img src="cross_validation_files/figure-gfm/unnamed-chunk-14-1.png" width="90%" />
+
+Fit the models I care about.
+
+``` r
+linear_model = lm(armc ~ weight, data = child_growth_df)
+pwlin_model = lm(armc ~ weight + weight_cp, data = child_growth_df)
+smooth_model = gam(armc ~ s(weight), data = child_growth_df)
+```
+
+``` r
+child_growth_df %>% 
+  gather_predictions(linear_model, pwlin_model, smooth_model) %>% 
+  ggplot(aes(x = weight, y = armc)) +
+  geom_point(alpha = .3) +
+  geom_line(aes(y = pred), color = 'red') +
+  facet_grid(. ~ model)
+```
+
+<img src="cross_validation_files/figure-gfm/unnamed-chunk-16-1.png" width="90%" />
+
+Try to understand model fit using CV.
+
+``` r
+cv_df = 
+  crossv_mc(child_growth_df, 100) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble)
+  )
+```
+
+See if i can fit the models to the splits
+
+``` r
+cv_df =
+  cv_df %>% 
+  mutate(
+    linear_model = map(.x = train, ~lm(armc ~ weight, data = .x)),
+    pwlin_model = map(.x = train, ~lm(armc ~ weight, data = .x)),
+    smooth_model = map(.x = train, ~gam(armc ~ s(weight), data = .x))
+  ) %>% 
+  mutate(
+    rmse_linear = map2_dbl(.x = linear_model, .y = test, ~rmse(model = .x, data = .y)),
+    rmse_pwlin = map2_dbl(.x = pwlin_model, .y = test, ~rmse(model = .x, data = .y)),
+    rmse_smooth = map2_dbl(.x = smooth_model, .y = test, ~rmse(model = .x, data = .y))
+  )
+```
+
+``` r
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model",
+    values_to = "rmse",
+    names_prefix = "rmse_"
+  ) %>% 
+  ggplot(aes(x = model, y = rmse)) +
+  geom_violin()
+```
+
+<img src="cross_validation_files/figure-gfm/unnamed-chunk-19-1.png" width="90%" />

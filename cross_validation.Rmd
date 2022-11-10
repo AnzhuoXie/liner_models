@@ -72,9 +72,81 @@ train_df %>%
   facet_grid(. ~ model)
 ```
 
+Let's look at the prediction accuracy.
+
 ```{r}
 rmse(linear_model, test_df)
 rmse(smooth_model, test_df)
 rmse(wiggly_model, test_df)
+```
+
+## Cross validation by using `modelr`
+
+```{r}
+cv_df = 
+  crossv_mc(nonlin_df, 100)
+```
+
+What is happening here...
+
+```{r}
+cv_df %>% pull(train) %>% .[[1]] %>% as_tibble()
+cv_df %>% pull(test) %>% .[[1]] %>% as_tibble()
+```
+
+```{r}
+cv_df =
+  cv_df %>% 
+  mutate(
+    train = map(train, as.tibble),
+    test = map(test, as.tibble)
+  )
+```
+
+Let's try to fit models and get RMSEs for them.
+
+```{r}
+cv_df = 
+  cv_df %>% 
+  mutate(
+    linear_model = map(.x = train, ~lm(y ~ x, data = .x)),
+    smooth_model = map(.x = train, ~gam(y ~ s(x), data = .x)),
+    wiggly_model = map(.x = train, ~gam(y ~ s(x, k = 30), sp = 10e-6, data = .x))
+  ) %>% 
+  mutate(
+    rmse_linear = map2_dbl(.x = linear_model, .y = test, ~rmse(model = .x, data = .y)),
+    rmse_smooth = map2_dbl(.x = smooth_model, .y = test, ~rmse(model = .x, data = .y)),
+    rmse_wiggly = map2_dbl(.x = wiggly_model, .y = test, ~rmse(model = .x, data = .y)),
+  )
+```
+
+What do these results say about the model choices?
+
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model",
+    values_to = "rmse",
+    names_prefix = "rmse_"
+  ) %>% 
+  ggplot(aes(x = model, y = rmse)) +
+  geom_violin()
+```
+
+Computing averages...
+
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model",
+    values_to = "rmse",
+    names_prefix = "rmse_"
+  ) %>% 
+  group_by(model) %>% 
+  summarize(ave_rmse = mean(rmse))
 ```
 
